@@ -18,7 +18,7 @@ entity MemoryBank is
         clk           : in std_logic;      -- Clock signal
         rstn          : in std_logic;      -- Reset signal
         io_address    : in std_logic_vector(7 downto 0); -- I/O Address (0x70 to 0x7F)
-        io_data_in    : in std_logic_vector(15 downto 0); -- Data from the processor
+        io_data_in    : in std_logic_vector(15 downto 0); -- Data from the processor -- I think that we should use one "inout" io_data vector like in the example
         io_data_out   : out std_logic_vector(15 downto 0); -- Data to the processor
         io_write      : in std_logic;      -- Write enable signal
         io_read       : in std_logic;      -- Read enable signal
