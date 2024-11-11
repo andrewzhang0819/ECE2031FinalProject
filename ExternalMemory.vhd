@@ -21,6 +21,7 @@ ENTITY ExternalMemory IS
 		cs_data 					: in		STD_LOGIC;
 		cs_bank					: in		STD_LOGIC;
 		cs_address				: in		STD_LOGIC;
+		cs_autoinc				: in 		STD_LOGIC;
 		io_data					: inout	STD_LOGIC_VECTOR(15 DOWNTO 0);
 		io_write					: in    	STD_LOGIC;
 		address_dbg				: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
@@ -30,16 +31,20 @@ ENTITY ExternalMemory IS
 		csdata_dbg				: out		STD_LOGIC;
 		csbank_dbg				: out		STD_LOGIC;
 		csaddr_dbg				: out		STD_LOGIC;
+		csincr_dbg				: out		STD_LOGIC;
 		data_write_dbg			: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
 		data_read_dbg			: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
-		drive_out_dbg			: out 	STD_LOGIC
+		drive_out_dbg			: out 	STD_LOGIC;
+		user_set_dbg			: out		STD_LOGIC;
+		io_write_dbg			: out		STD_LOGIC;
+		incren_dbg				: out		STD_LOGIC
     );
 END ExternalMemory;
 
 ARCHITECTURE a OF ExternalMemory IS
 	TYPE STATE_TYPE IS (
 		idle,
-		set_address, set_bank, data_reading, data_writing
+		set_address, set_bank, data_reading, data_writing, increment, set_incr
 	);
 
 	SIGNAL bank				: STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -51,6 +56,10 @@ ARCHITECTURE a OF ExternalMemory IS
 	SIGNAL data_read		: STD_LOGIC_VECTOR(15 DOWNTO 0);
 
 	SIGNAL drive_out		: STD_LOGIC;
+	
+	SIGNAL user_set		: STD_LOGIC;
+	
+	SIGNAL inc_enable		: STD_LOGIC;
 	
 	SIGNAL state 			: STATE_TYPE;
 	
@@ -96,18 +105,41 @@ ARCHITECTURE a OF ExternalMemory IS
 	PROCESS(clock, resetn)
 	BEGIN
 		if resetn = '0' then
+			user_set <= '0';
+			inc_enable <= '1';
 			state <= idle;
-			--data_write <= "0000000000000000";
 			address <= "0000000000000000";
 			bank <= "00";
 		elsif rising_edge(clock) then
-			case state is
-				when	idle =>
-					if cs_address = '1' and io_write = '1' then
+			case state is																-- state transition logic
+				when	idle =>															-- idle
+					if cs_autoinc = '1' then
+						state <= set_incr;
+					elsif cs_address = '1' and io_write = '1' then
 						state <= set_address;
 					elsif cs_bank = '1' and io_write = '1' then
 						state <= set_bank;
 					elsif cs_data = '1' and io_write = '1' then
+						state <= data_writing;
+						if user_set = '0' and inc_enable = '1' then
+							state <= increment;
+						else
+							state <= data_writing;
+						end if;
+					elsif cs_data = '1' and io_write = '0' then
+						state <= data_reading;
+						if user_set = '0' and inc_enable = '1' then
+							state <= increment;
+						else
+							state <= data_reading;
+						end if;
+					else
+						state <= idle;
+					end if;
+					
+				when	increment		=>
+					address <= address + 1;
+					if cs_data = '1' and io_write = '1' then
 						state <= data_writing;
 					elsif cs_data = '1' and io_write = '0' then
 						state <= data_reading;
@@ -115,6 +147,7 @@ ARCHITECTURE a OF ExternalMemory IS
 						state <= idle;
 					end if;
 				when	set_address 	=>
+					user_set <= '1';
 					address <= io_data;
 					state <= idle;
 				when	set_bank 		=>
@@ -126,8 +159,20 @@ ARCHITECTURE a OF ExternalMemory IS
 					else
 						state <= idle;
 					end if;
+					user_set <= '0';
 				when	data_writing	=>
-					data_write <= io_data;
+					if cs_data = '1' and io_write = '1' then		-- remain here so that the address is not immediately incremented
+						data_write <= io_data;
+					else
+						state <= idle;
+					end if;
+					user_set <= '0';
+				when	set_incr			=>
+					if io_data = 0 and cs_autoinc = '1' then
+						inc_enable <= '0';
+					elsif io_data /= 0 and cs_autoinc = '1' then
+						inc_enable <= '1';
+					end if;
 					state <= idle;
 				when others				=>
 					state <= idle;
@@ -140,30 +185,19 @@ ARCHITECTURE a OF ExternalMemory IS
 		'0' when set_address,
 		'0' when set_bank,
 		'0' when data_reading,
-		'1' when data_writing;
+		'1' when data_writing,
+		'0' when increment,
+		'0' when set_incr;
 
 	with state select drive_out <=
 		'0' when idle,
 		'0' when set_address,
 		'0' when set_bank,
 		'1' when data_reading,
-		'0' when data_writing;
+		'0' when data_writing,
+		'0' when increment,
+		'0' when set_incr;
 		
-	--with state select address <=
-	--	address when idle,
-	--	data_in when set_address,
-	--	address when set_bank,
-	--	address when data_read,
-	--	address when data_write;
-		
-	--with state select bank <=
-	--	bank 						when idle,
-	--	bank 						when set_address,
-	--	data_in(7 downto 0) 	when set_bank,
-	--	bank 						when data_read,
-	--	bank 						when data_write;
-		
-	-- data <= data_a;
 	address_a <= bank & address;
 	
 	-- debug statements
@@ -174,8 +208,12 @@ ARCHITECTURE a OF ExternalMemory IS
 	csdata_dbg		<= cs_data;
 	csbank_dbg		<= cs_bank;
 	csaddr_dbg		<= cs_address;
+	csincr_dbg		<= cs_autoinc;
 	data_write_dbg	<= data_write;
 	data_read_dbg	<= data_read;
 	drive_out_dbg	<= drive_out;
+	user_set_dbg	<= user_set;
+	io_write_dbg	<= io_write;
+	incren_dbg		<= inc_enable;
 		
 END a;
