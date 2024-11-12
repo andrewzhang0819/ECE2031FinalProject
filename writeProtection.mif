@@ -5,6 +5,59 @@ ADDRESS_RADIX=HEX;
 DATA_RADIX=HEX;
 
 CONTENT BEGIN
-[0000..07FF] : 0000; -- [empty memory]
+0000: B800; -- LOADI	0			; set to bank 0
+0001: 9872; -- OUT		extmembank
+0002: B801; -- LOADI   1			; set write protection to bank 0
+0003: 9874; -- OUT     extmemprot
+0004: B800; -- LOADI	0			; set bank 0 back 
+0005: 9874; -- OUT		extmemprot
+0006: B800; -- LOADI	0			; set to bank 0 
+0007: 9872; -- OUT		extmembank	
+0008: B801; -- LOADI	1     		; set write protection to bank 0
+0009: 9874; -- OUT     extmemprot
+000A: 9872; -- OUT     extmembank 	; set to bank 1
+000B: 9874; -- OUT     extmemprot	; set write protection to bank 1
+000C: B802; -- LOADI   2			; set to bank 2
+000D: 9872; -- OUT     extmembank
+000E: B801; -- LOADI   1 			; set write protection to bank 2
+000F: 9874; -- OUT     extmemprot
+0010: B803; -- LOADI   3			; set to bank 3
+0011: 9872; -- OUT     extmembank  
+0012: B801; -- LOADI   1			; set write protection to bank 3
+0013: 9872; -- OUT 	extmembank 	
+0014: B800; -- LOADI   0       	; set to bank 0 
+0015: 9872; -- OUT     extmembank
+0016: B801; -- LOADI   1			; try to write 1 to bank 0
+0017: 9870; -- OUT     extmemdata
+0018: 9070; -- IN      extmemdata	; should not display 1
+0019: B801; -- LOADI   1       	; set to bank 1
+001A: 9872; -- OUT     extmembank
+001B: B802; -- LOADI   2			; try to write 1 to bank 1
+001C: 9870; -- OUT     extmemdata
+001D: 9070; -- IN      extmemdata	; should not display 2
+001E: B802; -- LOADI   2       	; set to bank 2
+001F: 9872; -- OUT     extmembank
+0020: B803; -- LOADI   3			; try to write 1 to bank 2
+0021: 9870; -- OUT     extmemdata
+0022: 9070; -- IN      extmemdata	; should not display 3
+0023: B803; -- LOADI   3       	; set to bank 3
+0024: 9872; -- OUT     extmembank
+0025: B804; -- LOADI   4			; try to write 1 to bank 3
+0026: 9870; -- OUT     extmemdata
+0027: 9070; -- IN      extmemdata	; should not display 4
+0028: B800; -- LOADI	0			; go to bank 0
+0029: 9872; -- OUT     extmembank  
+002A: 9874; -- OUT     extmemprot  ; turn off write protection
+002B: B801; -- LOADI   1           ; try to write 1 to bank 0
+002C: 9870; -- OUT     extmemdata
+002D: 9070; -- IN  	extmemdata	; should display 1
+002E: 9872; -- OUT     extmembank  ; go to bank 1
+002F: B801; -- LOADI   1			
+0030: 9874; -- OUT     extmemprot	; turn off write protection
+0031: B802; -- LOADI   2			
+0032: 9870; -- OUT     extmemdata 	; should display 2
+0033: 9070; -- IN      extmemdata
+0034: 2834; -- JUMP	END
+[0035..07FF] : 0000; -- [empty memory]
 END;
 
