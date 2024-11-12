@@ -8,9 +8,11 @@ library ieee;
 library altera_mf;
 library lpm;
 
+
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
 use altera_mf.altera_mf_components.all;
 use lpm.lpm_components.all;
 
@@ -22,6 +24,7 @@ ENTITY ExternalMemory IS
 		cs_bank					: in		STD_LOGIC;
 		cs_address				: in		STD_LOGIC;
 		cs_autoinc				: in 		STD_LOGIC;
+		cs_writeprot			: in		STD_LOGIC;
 		io_data					: inout	STD_LOGIC_VECTOR(15 DOWNTO 0);
 		io_write					: in    	STD_LOGIC;
 		address_dbg				: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
@@ -37,14 +40,17 @@ ENTITY ExternalMemory IS
 		drive_out_dbg			: out 	STD_LOGIC;
 		user_set_dbg			: out		STD_LOGIC;
 		io_write_dbg			: out		STD_LOGIC;
-		incren_dbg				: out		STD_LOGIC
+		incren_dbg				: out		STD_LOGIC;
+		lock_dbg					: out		STD_LOGIC_VECTOR(3 DOWNTO 0);
+		writeen_dbg				: out		STD_LOGIC;
+		csprot_dbg				: out		STD_LOGIC
     );
 END ExternalMemory;
 
 ARCHITECTURE a OF ExternalMemory IS
 	TYPE STATE_TYPE IS (
 		idle,
-		set_address, set_bank, data_reading, data_writing, increment, set_incr
+		set_address, set_bank, data_reading, data_writing, increment, set_incr, set_prot
 	);
 
 	SIGNAL bank				: STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -60,6 +66,9 @@ ARCHITECTURE a OF ExternalMemory IS
 	SIGNAL user_set		: STD_LOGIC;
 	
 	SIGNAL inc_enable		: STD_LOGIC;
+	
+	SIGNAL locked_banks	: STD_LOGIC_VECTOR(3 DOWNTO 0);
+	SIGNAL write_en		: STD_LOGIC;
 	
 	SIGNAL state 			: STATE_TYPE;
 	
@@ -119,6 +128,8 @@ ARCHITECTURE a OF ExternalMemory IS
 						state <= set_address;
 					elsif cs_bank = '1' and io_write = '1' then
 						state <= set_bank;
+					elsif cs_writeprot = '1' and io_write = '1' then
+						state <= set_prot;
 					elsif cs_data = '1' and io_write = '1' then
 						state <= data_writing;
 						if user_set = '0' and inc_enable = '1' then
@@ -152,7 +163,25 @@ ARCHITECTURE a OF ExternalMemory IS
 					state <= idle;
 				when	set_bank 		=>
 					bank <= io_data(1 downto 0);
+					
 					state <= idle;
+				when	set_prot =>
+										
+					case bank is 
+						when "00" =>
+							locked_banks(0) <= io_data(0);
+						when "01" =>
+							locked_banks(1) <= io_data(0);
+						when "10" =>
+							locked_banks(2) <= io_data(0);
+						when "11" =>
+							locked_banks(3) <= io_data(0);
+						when others =>
+							locked_banks(0) <= io_data(0);
+					end case;
+					
+					state <= idle;
+					
 				when	data_reading	=>
 					if cs_data = '1' and io_write = '0' then		-- remain here long enough for scomp to read
 						state <= data_reading;
@@ -161,13 +190,43 @@ ARCHITECTURE a OF ExternalMemory IS
 					end if;
 					user_set <= '0';
 				when	data_writing	=>
-					if cs_data = '1' and io_write = '1' then		-- remain here so that the address is not immediately incremented
+					
+--					case bank is 
+--						when "00" =>
+--							if locked_banks(0) = '1' then
+--								write_en <= '0';
+--							else
+--								write_en <= '1';
+--							end if;
+--						when "01" =>
+--							if locked_banks(1) = '1' then
+--								write_en <= '0';
+--							else
+--								write_en <= '1';
+--							end if;
+--						when "10" =>
+--							if locked_banks(2) = '1' then
+--								write_en <= '0';
+--							else
+--								write_en <= '1';
+--							end if;
+--						when "11" =>
+--							if locked_banks(3) = '1' then
+--								write_en <= '0';
+--							else
+--								write_en <= '1';
+--							end if;
+--						when others =>
+--							write_en <= '0';
+--					end case;
+				
+					if cs_data = '1' and io_write = '1' and write_en =  '1' then		-- remain here so that the address is not immediately incremented
 						data_write <= io_data;
 					else
 						state <= idle;
 					end if;
 					user_set <= '0';
-				when	set_incr			=>
+				when	set_incr	=>
 					if io_data = 0 and cs_autoinc = '1' then
 						inc_enable <= '0';
 					elsif io_data /= 0 and cs_autoinc = '1' then
@@ -187,7 +246,14 @@ ARCHITECTURE a OF ExternalMemory IS
 		'0' when data_reading,
 		'1' when data_writing,
 		'0' when increment,
-		'0' when set_incr;
+		'0' when set_incr,
+		'0' when set_prot;
+		
+	with bank select write_en <=
+		NOT(locked_banks(0)) when "00",
+		NOT(locked_banks(1)) when "01",
+		NOT(locked_banks(2)) when "10",
+		NOT(locked_banks(3)) when "11";
 
 	with state select drive_out <=
 		'0' when idle,
@@ -196,7 +262,8 @@ ARCHITECTURE a OF ExternalMemory IS
 		'1' when data_reading,
 		'0' when data_writing,
 		'0' when increment,
-		'0' when set_incr;
+		'0' when set_incr,
+		'0' when set_prot;
 		
 	address_a <= bank & address;
 	
@@ -215,5 +282,9 @@ ARCHITECTURE a OF ExternalMemory IS
 	user_set_dbg	<= user_set;
 	io_write_dbg	<= io_write;
 	incren_dbg		<= inc_enable;
+	lock_dbg			<= locked_banks;
+	writeen_dbg		<= write_en;
+	csprot_dbg		<= cs_writeprot;
+	
 		
 END a;

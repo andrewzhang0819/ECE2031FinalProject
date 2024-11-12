@@ -24,7 +24,7 @@ CONTENT BEGIN
 0010: B803; -- LOADI   3			; set to bank 3
 0011: 9872; -- OUT     extmembank  
 0012: B801; -- LOADI   1			; set write protection to bank 3
-0013: 9872; -- OUT 	extmembank 	
+0013: 9874; -- OUT 	extmemprot 	
 0014: B800; -- LOADI   0       	; set to bank 0 
 0015: 9872; -- OUT     extmembank
 0016: B801; -- LOADI   1			; try to write 1 to bank 0

@@ -8,12 +8,12 @@ OUT		extmembank
 LOADI   1			; set write protection to bank 0
 OUT     extmemprot
 
-LOADI	0			; set bank 0 back 
+LOADI	0			; set bank 0 back
 OUT		extmemprot
 
 ; set all banks to read only
-LOADI	0			; set to bank 0 
-OUT		extmembank	
+LOADI	0			; set to bank 0
+OUT		extmembank
 LOADI	1     		; set write protection to bank 0
 OUT     extmemprot
 
@@ -26,12 +26,12 @@ LOADI   1 			; set write protection to bank 2
 OUT     extmemprot
 
 LOADI   3			; set to bank 3
-OUT     extmembank  
+OUT     extmembank
 LOADI   1			; set write protection to bank 3
-OUT 	extmembank 	
+OUT 	extmemprot
 
 ; check if you can actually write to it
-LOADI   0       	; set to bank 0 
+LOADI   0       	; set to bank 0
 OUT     extmembank
 LOADI   1			; try to write 1 to bank 0
 OUT     extmemdata
@@ -57,24 +57,21 @@ IN      extmemdata	; should not display 4
 
 ; test if turning off write protection will now be able to write
 LOADI	0			; go to bank 0
-OUT     extmembank  
+OUT     extmembank
 OUT     extmemprot  ; turn off write protection
 LOADI   1           ; try to write 1 to bank 0
 OUT     extmemdata
 IN  	extmemdata	; should display 1
 
 OUT     extmembank  ; go to bank 1
-LOADI   1			
+LOADI   1
 OUT     extmemprot	; turn off write protection
-LOADI   2			
+LOADI   2
 OUT     extmemdata 	; should display 2
 IN      extmemdata
 
 END:
 JUMP	END
-
-ORG &H25
-result:		DW 0
 
 ; constants
 ; IO addresses

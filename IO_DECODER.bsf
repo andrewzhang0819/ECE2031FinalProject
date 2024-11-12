@@ -101,6 +101,13 @@ https://fpgasoftware.intel.com/eula.
 		(text "EXTMEMINCR_EN" (rect 156 155 243 167)(font "Arial" ))
 		(line (pt 264 160)(pt 248 160)(line_width 1))
 	)
+	(port
+		(pt 264 176)
+		(output)
+		(text "EXTMEMPROT_EN" (rect 0 0 89 12)(font "Arial" ))
+		(text "EXTMEMPROT_EN" (rect 154 171 243 183)(font "Arial" ))
+		(line (pt 264 176)(pt 248 176)(line_width 1))
+	)
 	(drawing
 		(rectangle (rect 16 16 248 192)(line_width 1))
 	)
