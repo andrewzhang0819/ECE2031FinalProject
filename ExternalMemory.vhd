@@ -79,7 +79,7 @@ ARCHITECTURE a OF ExternalMemory IS
 		numwords_a => 262144,
 		widthad_a => 18,
 		width_a => 16,
-		init_file => "none",
+		init_file => "sine_lookup_table.mif",
 		clock_enable_input_a => "BYPASS",
 		clock_enable_output_a => "BYPASS",
 		intended_device_family => "MAX 10",
@@ -114,7 +114,7 @@ ARCHITECTURE a OF ExternalMemory IS
 	PROCESS(clock, resetn)
 	BEGIN
 		if resetn = '0' then
-			user_set <= '0';
+			user_set <= '1';
 			inc_enable <= '1';
 			state <= idle;
 			address <= "0000000000000000";
