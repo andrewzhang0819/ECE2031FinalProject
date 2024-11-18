@@ -26,24 +26,7 @@ ENTITY ExternalMemory IS
 		cs_autoinc				: in 		STD_LOGIC;
 		cs_writeprot			: in		STD_LOGIC;
 		io_data					: inout	STD_LOGIC_VECTOR(15 DOWNTO 0);
-		io_write					: in    	STD_LOGIC;
-		address_dbg				: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
-		address_a_dbg			: out		STD_LOGIC_VECTOR(17 DOWNTO 0);
-		bank_dbg					: out		STD_LOGIC_VECTOR(1 DOWNTO 0);
-		iodata_dbg				: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
-		csdata_dbg				: out		STD_LOGIC;
-		csbank_dbg				: out		STD_LOGIC;
-		csaddr_dbg				: out		STD_LOGIC;
-		csincr_dbg				: out		STD_LOGIC;
-		data_write_dbg			: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
-		data_read_dbg			: out		STD_LOGIC_VECTOR(15 DOWNTO 0);
-		drive_out_dbg			: out 	STD_LOGIC;
-		user_set_dbg			: out		STD_LOGIC;
-		io_write_dbg			: out		STD_LOGIC;
-		incren_dbg				: out		STD_LOGIC;
-		lock_dbg					: out		STD_LOGIC_VECTOR(3 DOWNTO 0);
-		writeen_dbg				: out		STD_LOGIC;
-		csprot_dbg				: out		STD_LOGIC
+		io_write					: in    	STD_LOGIC
     );
 END ExternalMemory;
 
@@ -131,14 +114,14 @@ ARCHITECTURE a OF ExternalMemory IS
 					elsif cs_writeprot = '1' and io_write = '1' then
 						state <= set_prot;
 					elsif cs_data = '1' and io_write = '1' then
-						state <= data_writing;
+						--state <= data_writing;
 						if user_set = '0' and inc_enable = '1' then
 							state <= increment;
 						else
 							state <= data_writing;
 						end if;
 					elsif cs_data = '1' and io_write = '0' then
-						state <= data_reading;
+						--state <= data_reading;
 						if user_set = '0' and inc_enable = '1' then
 							state <= increment;
 						else
@@ -266,25 +249,5 @@ ARCHITECTURE a OF ExternalMemory IS
 		'0' when set_prot;
 		
 	address_a <= bank & address;
-	
-	-- debug statements
-	address_dbg 	<= address;
-	address_a_dbg 	<= address_a;
-	bank_dbg			<= bank;
-	iodata_dbg		<= io_data;
-	csdata_dbg		<= cs_data;
-	csbank_dbg		<= cs_bank;
-	csaddr_dbg		<= cs_address;
-	csincr_dbg		<= cs_autoinc;
-	data_write_dbg	<= data_write;
-	data_read_dbg	<= data_read;
-	drive_out_dbg	<= drive_out;
-	user_set_dbg	<= user_set;
-	io_write_dbg	<= io_write;
-	incren_dbg		<= inc_enable;
-	lock_dbg			<= locked_banks;
-	writeen_dbg		<= write_en;
-	csprot_dbg		<= cs_writeprot;
-	
 		
 END a;

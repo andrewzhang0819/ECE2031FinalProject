@@ -1,0 +1,44 @@
+WIDTH=16;
+DEPTH=2048;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+0000: B800; -- LOADI	0
+0001: 9871; -- OUT		extmemaddr	; reset duty cycle index
+0002: 101E; -- STORE	duty_cycle	; reset duty cycle???
+0003: B869; -- LOADI	&amp;h69
+0004: 9805; -- OUT		hex1
+0005: 081E; -- LOAD	duty_cycle	; is duty cycle below 1000?
+0006: 201F; -- SUB		period
+0007: 4000; -- JZERO	Main
+0008: 9070; -- IN		extmemdata
+0009: 101E; -- STORE	duty_cycle	; set duty cycle
+000A: 9804; -- OUT		hex0
+000B: B800; -- LOADI	0
+000C: 1020; -- STORE	cycle	; cycle = 0
+000D: 0820; -- LOAD	cycle	; is cycle &lt; 1000?
+000E: 201F; -- SUB		period
+000F: 3805; -- JPOS	SetDutyCycle
+0010: 0820; -- LOAD	cycle	; is cycle less than duty cycle?
+0011: 201E; -- SUB		duty_cycle
+0012: 3816; -- JPOS	Else
+0013: B803; -- LOADI	3		; yes, keep LEDs on
+0014: 9801; -- OUT		LEDs
+0015: 2818; -- JUMP	Skip
+0016: B802; -- LOADI	2		; no, turn LEDs off
+0017: 9801; -- OUT		LEDs
+0018: B801; -- LOADI	1		; cycle++
+0019: 1820; -- ADD		cycle
+001A: 1020; -- STORE	cycle
+001B: 280D; -- JUMP	PWM
+001C: 2805; -- JUMP 	SetDutyCycle
+001D: 2800; -- JUMP	Main
+001E: 0000; -- duty_cycle:		DW	0
+001F: 03E8; -- period:			DW	1000
+0020: 0000; -- cycle:			DW	0
+0021: 0000; -- iteration:		DW	0
+[0022..07FF] : 0000; -- [empty memory]
+END;
+
