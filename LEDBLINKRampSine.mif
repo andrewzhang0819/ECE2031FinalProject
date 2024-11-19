@@ -1,0 +1,58 @@
+WIDTH=16;
+DEPTH=2048;
+
+ADDRESS_RADIX=HEX;
+DATA_RADIX=HEX;
+
+CONTENT BEGIN
+0000: 082F; -- LOAD	ramp		; are we over 1000?
+0001: 202C; -- SUB		period
+0002: 3809; -- JPOS	Main
+0003: B801; -- LOADI	1			; ramp just linearly increases by 1 every loop
+0004: 182F; -- ADD		ramp
+0005: 9870; -- OUT		extmemdata
+0006: 102F; -- STORE	ramp
+0007: 9805; -- OUT		hex1
+0008: 2800; -- JUMP	CalculateRamp
+0009: 9000; -- IN		switches
+000A: 9805; -- OUT		hex1
+000B: 9872; -- OUT		extmembank
+000C: B800; -- LOADI	0
+000D: 9871; -- OUT		extmemaddr	; reset duty cycle index
+000E: 102E; -- STORE	iteration	; reset iteration
+000F: 082E; -- LOAD	iteration	; is iteration below 1000?
+0010: 202C; -- SUB		period
+0011: 3809; -- JPOS	Main
+0012: 9070; -- IN		extmemdata	; set duty cycle
+0013: 102B; -- STORE	duty_cycle
+0014: 9804; -- OUT		hex0
+0015: B801; -- LOADI	1			; iteration++
+0016: 182E; -- ADD		iteration
+0017: 102E; -- STORE	iteration
+0018: B800; -- LOADI	0
+0019: 102D; -- STORE	cycle		; cycle = 0
+001A: 082D; -- LOAD	cycle		; is cycle &lt; 1000?
+001B: 202C; -- SUB		period
+001C: 380F; -- JPOS	SetDutyCycle
+001D: 082D; -- LOAD	cycle		; is cycle less than duty cycle?
+001E: 202B; -- SUB		duty_cycle
+001F: 3823; -- JPOS	Else
+0020: B801; -- LOADI	1			; yes, keep LEDs on
+0021: 9801; -- OUT		LEDs
+0022: 2825; -- JUMP	Skip
+0023: B800; -- LOADI	0			; no, turn LEDs off
+0024: 9801; -- OUT		LEDs
+0025: B801; -- LOADI	1			; cycle++
+0026: 182D; -- ADD		cycle
+0027: 102D; -- STORE	cycle
+0028: 281A; -- JUMP	PWM
+0029: 280F; -- JUMP 	SetDutyCycle
+002A: 2809; -- JUMP	Main
+002B: 0000; -- duty_cycle:		DW	0
+002C: 03E8; -- period:			DW	1000
+002D: 0000; -- cycle:			DW	0
+002E: 0000; -- iteration:		DW	0
+002F: 0000; -- ramp:			DW	0
+[0030..07FF] : 0000; -- [empty memory]
+END;
+
